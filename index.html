@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) 2017 by Matt Simmons
+Released under the MIT license
+Created using JS Bin
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+  
+<meta name="Ripples_1" content="width=device-width">  
+<title>Ripples</title>
+<style>
+  body{ background-color: #000; }   
+  rect{ fill: #03F; opacity: 0; }
+</style>
+</head>
+  
+<body>
+<script>
+var x = 20,        //square width
+    w = Math.ceil(window.innerWidth/x)*x,
+    h = window.innerHeight,
+    l = w/x,       //squares per line
+    n = h/x*l,     //number of squares
+    quad = 9;  
+    
+var svg = d3.select("body").append("svg")
+    .attr("width", w)
+    .attr("height", h);
+
+svg.selectAll("rect")
+  .data(d3.range(n))
+  .enter().append("rect")
+    .attr("x", function(i){ return (i % l)*x; })
+    .attr("y", function(i){ return Math.floor(i/l)*x; })
+    .attr("width", x)
+    .attr("height", x)
+    .attr("clicked", false)
+    .on("click", mouseclick);
+ 
+function mouseclick(){
+  var element = d3.select(this),
+      x2 = parseInt(element.attr("x")),
+      y2 = parseInt(element.attr("y"));   
+  var f = d3.selectAll("rect")[0].filter(function(d) {
+    var xpos = parseInt(d3.select(d).attr("x")),
+        ypos = parseInt(d3.select(d).attr("y"));
+    return ( Math.pow(xpos - x2,2) + Math.pow(ypos - y2,2) < Math.pow(quad*x,2) );
+  });
+    d3.selectAll(f).each(toFront)
+    .transition()
+      .delay(function(d){ 
+        var el = d3.select(this);
+        return 4*trig(element,el); 
+      })
+      .duration(400)
+      .attr("transform", function(d){ 
+        var el = d3.select(this),
+            mc = Math.sqrt(2)*(quad/2)*x,
+             r = (mc-trig(element,el))/mc > 0? (mc-trig(element,el))/mc : 0 ;
+        return "scale(" + (1 + r/9) + ")";
+      }) 
+      .style("opacity", function(d){ 
+        var el = d3.select(this);
+        return 1 - trig(element, el)*x/3000;
+      })
+    .transition().duration(400)
+      .attr("transform", "scale(1)")
+      .style("opacity", 0);
+}
+  
+function toFront(){
+  this.parentNode.appendChild(this);
+}
+
+function trig(element, el){
+  var a2 = Math.pow(element.attr("x") - el.attr("x"),2),
+      b2 = Math.pow(element.attr("y") - el.attr("y"),2);
+  return Math.sqrt(a2+b2); 
+}  
+</script>
+</body>
